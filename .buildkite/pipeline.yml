@@ -5,7 +5,7 @@ steps:
   - name: ":rocket: deploy to dev"
     env:
       GCP_PROJECT: scg-hip-dev
-      VAULT_ENVS: "API_KEY:secret/gcp/${GCP_PROJECT}/secrets/hris/PSOFT_SMB_PASSWORD"
+      VAULT_ENVS: "API_KEY:secret/gcp/scg-hip-dev/secrets/hris/PSOFT_API_PASSWORD"
     plugins:
       #- scentregroup/vault#v1.0.1:
       #    paths:
