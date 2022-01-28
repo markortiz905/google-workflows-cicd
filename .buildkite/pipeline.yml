@@ -1,12 +1,9 @@
 env:
   GCP_REGION: asia-southeast1
-  RELEASE_NAME: ${BUILDKITE_PIPELINE_SLUG}
 
 steps:
   - name: ":rocket: deploy to dev"
     env:
-      ENV: dev
-      STACK_ENV: dev
       GCP_PROJECT: scg-hip-dev
     plugins:
       - docker-compose#v3.3.0:
@@ -17,5 +14,3 @@ steps:
     branches: "feat* develop"
     concurrency: 1
     concurrency_group: "${ENV}-${BUILDKITE_PIPELINE_SLUG}"
-
-  - wait

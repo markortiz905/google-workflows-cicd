@@ -8,8 +8,6 @@ services:
     environment:
       - GCP_REGION
       - GCP_PROJECT
-      - BUILDKITE_BUILD_NUMBER
-      - BUILDKITE_PIPELINE_SLUG
     volumes:
       - ${PWD}:/app
       - ${HOME}/.google-credentials:/.google-credentials
