@@ -1,165 +1,67 @@
 main:
-  params: [input]
-  steps:
-    - parentScope:
+    params: [args]
+    steps:
+    - declare_input:
         assign:
-            - endpoint: https://api.dev.scentregroup.cloud/v2/bss-sf-satori-sftp/
-            - startTime: ${time.format(sys.now(), "Australia/Sydney")}
-            - success: true
-    - checkInput:
-        switch:
-          - condition: ${"job" in input}
-            assign:
-                - job: ${input.job}
-            next: readInputAsJob
-          - condition: true
-            next: createJob
-    - createJob:
-        steps:
-            - callApi:
-                call: http.get
+          - bomResults: []
+          - jsonInput: >
+              {
+                "data": [
+                    "fwo/IDW60901/IDW60901.94610.json",
+                    "fwo/IDW60901/IDW60901.94608.json",
+                    "fwo/IDN60901/IDN60901.95765.json",
+                    "fwo/IDQ60901/IDQ60901.94580.json",
+                    "fwo/IDQ60901/IDQ60901.94592.json",
+                    "fwo/IDQ60801/IDQ60801.94287.json",
+                    "fwo/IDV60901/IDV60901.94870.json",
+                    "fwo/IDN60801/IDN60801.95745.json",
+                    "fwo/IDN60801/IDN60801.94768.json",
+                    "fwo/IDN60801/IDN60801.94763.json",
+                    "fwo/IDN60801/IDN60801.94766.json",
+                    "fwo/IDN60801/IDN60801.94759.json",
+                    "fwo/IDQ60901/IDQ60901.94576.json",
+                    "fwo/IDQ60901/IDQ60901.94578.json",
+                    "fwo/IDV60901/IDV60901.95867.json",
+                    "fwo/IDV60901/IDV60901.95866.json",
+                    "fwo/IDV60901/IDV60901.94857.json",
+                    "fwo/IDV60901/IDV60901.94854.json",
+                    "fwo/IDN60801/IDN60801.94774.json",
+                    "fwo/IDN60801/IDN60801.95771.json",
+                    "fwo/IDN60903/IDN60903.94926.json",
+                    "fwo/IDS60901/IDS60901.94672.json",
+                    "fwo/IDN60801/IDN60801.94767.json"
+                ]
+              }
+    - parseToJsonObject:
+        call: json.decode
+        args:
+          data: ${jsonInput} 
+        result: bomUrls
+    - queryResult:
+        for:
+          value: bomUrl
+          index: counter
+          in: ${bomUrls.data}
+          steps:
+            - queryBomUrl:
+                try:
+                  call: http.get
+                  args:
+                    url: ${"https://australia-southeast1-scg-udp-etl-dev.cloudfunctions.net/get_BOM_Data/" + bomUrl}
+                    headers: 
+                      User-Agent: ${"workflows-" + text.substring(string(sys.now()), 8, 13) }
+                  result: bomResult
+                retry: ${http.default_retry}
+            - addToResults:
+                assign:
+                  - bomResults: ${list.concat(bomResults, bomResult)}
+            - logResult:
+                call: sys.log
                 args:
-                    url: ${endpoint + "/createJob/" + startTime}
-                    headers:
-                        Accept: application/json
-                result: response
-            - mapResponse:
-                assign:
-                    - job: ${response.body}
-    - readInputAsJob:
-        assign:
-          - jobId: ${job.jobId}
-          - attempt: ${string(job.attemptNumber)}
-          - lowWatermark: ${job.lowWaterMark}
-          - highWatermark: ${job.highWaterMark}
-    - processClientData:
-        steps:
-            - prepareExec1:
-                assign:
-                    - data:
-                        jobId: ${jobId}
-                        query: ${"Select Name, Trading_Name__c, ABN__c, Company_Legal_Type__c, Company_Status__c, Customer_ID__c, GST_Registered__c, Invoice_Email__c, Invoice_Frequency__c, Payment_Terms__c, Type, RecordType.name, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account WHERE SystemModstamp >= " + lowWatermark + " AND SystemModstamp < " + highWatermark }
-                        gcsPath: ${"gs://bss-sf-hip-dev-gcs/dev/" + jobId + "/" + attempt + "/client-data.csv"}
-            - execHttpCall1:
-                try:
-                    call: http.post
-                    args:
-                        url: ${endpoint + "executeSfToGcsJob"}
-                        headers:
-                            Content-Type: application/json
-                        body: ${data}
-                    result: response
-                except:
-                    as: e
-                    steps:
-                        - audit1:
-                            assign:
-                                - success: false
-                                - job.errorDetails: ${json.encode_to_string(e)}
-                            next: writeJobResult
-            - updateJodStatus1:
-                assign:
-                    - job.totalRecords: ${int(response.body.totalRecords) + int(job.totalRecords)}
-                    - job.timeLapsed: ${int(response.body.timeLapsedMs) + int(job.timeLapsed)}
-        
-    - processClientRevenue:
-        steps:
-            - prepareExec2:
-                assign:
-                    - data:
-                        jobId: ${jobId}
-                        query: ${"SELECT Account__r.customer_id__c, Invoice_Date__c, Payable_Amount__c, Taxable_Amount__c FROM Invoice_Header__c WHERE Conga_OppRecordTypeDevName__c = 'Retail' and recordTYpe.name = 'Invoice' and credited__C = false and invoice_date__c >= LAST_YEAR and invoice_date__c <= THIS_YEAR and SystemModstamp >= " + lowWatermark + " AND SystemModstamp < " + highWatermark}
-                        gcsPath: ${"gs://bss-sf-hip-dev-gcs/dev/" + jobId + "/" + attempt + "/client-revenue.csv"}
-            - execHttpCall2:
-                try:
-                    call: http.post
-                    args:
-                        url: ${endpoint + "executeSfToGcsJob"}
-                        headers:
-                            Content-Type: application/json
-                        body: ${data}
-                    result: response
-                except:
-                    as: e
-                    steps:
-                        - audit2:
-                            assign:
-                                - success: false
-                                - job.errorDetails: ${json.encode_to_string(e)}
-                            next: writeJobResult
-            - updateJodStatus2:
-                assign:
-                    - job.totalRecords: ${int(response.body.totalRecords) + int(job.totalRecords)}
-                    - job.timeLapsed: ${int(response.body.timeLapsedMs) + int(job.timeLapsed)}
-        
-    - writeCientDataToSatori:
-        steps:
-            - prepareExec3:
-                assign:
-                    - data:
-                        jobId: ${jobId}
-                        gcsPath: ${"gs://bss-sf-hip-dev-gcs/dev/" + jobId + "/" + attempt + "/client-data.csv"}
-                        satoriFileName: ${jobId + "_client-data.csv"}
-            - execHttpCall3:
-                try:
-                    call: http.post
-                    args:
-                        url: ${endpoint + "executeGcsToSatori"}
-                        headers:
-                            Content-Type: application/json
-                        body: ${data}
-                    result: response
-                except:
-                    as: e
-                    steps:
-                        - audit3:
-                            assign:
-                                - success: false
-                                - job.errorDetails: ${json.encode_to_string(e)}
-                            next: writeJobResult
-    - writeCientRevenueToSatori:
-        steps:
-            - prepareExec4:
-                assign:
-                    - data:
-                        jobId: ${jobId}
-                        gcsPath: ${"gs://bss-sf-hip-dev-gcs/dev/" + jobId + "/" + attempt + "/client-revenue.csv"}
-                        satoriFileName: ${jobId + "_client-revenue.csv"}
-            - execHttpCall4:
-                try:
-                    call: http.post
-                    args:
-                        url: ${endpoint + "executeGcsToSatori"}
-                        headers:
-                            Content-Type: application/json
-                        body: ${data}
-                    result: response
-                except:
-                    as: e
-                    steps:
-                        - audit4:
-                            assign:
-                                - success: false
-                                - job.errorDetails: ${json.encode_to_string(e)}
-                            next: writeJobResult
-    - writeJobResult:
-        try:
-            steps:
-                - prepareExec5:
-                    assign:
-                        - job.success: ${success}
-                - execHttpCall5:
-                    call: http.post
-                    args:
-                        url: ${endpoint + "jobDetails"}
-                        headers:
-                            Content-Type: application/json
-                        body: ${job}
-                    result: response
-        except:
-            as: e
-            steps:
-                - unhandled_exception:
-                    raise: ${e}
-    - returnOutput:
-        return: ${response}
+                  data: ${bomResults}
+            - sleepNow:
+                call: sys.sleep
+                args:
+                  seconds: 1
+    - returnResult:
+        return: ${bomResults}
