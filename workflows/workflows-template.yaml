@@ -6,6 +6,7 @@ main:
             - endpoint: https://api.dev.scentregroup.cloud/v2/bss-sf-satori-sftp/
             - startTime: ${time.format(sys.now(), "Australia/Sydney")}
             - success: true
+            - apiKey: API_KEY_SECRET
     - checkInput:
         switch:
           - condition: ${"job" in input}
