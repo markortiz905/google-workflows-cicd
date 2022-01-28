@@ -5,7 +5,7 @@ gcloud config set project $GCP_PROJECT
 
 deloy_workflows() {
     echo "Apply secrets..."
-    sed -i -e 's/API_KEY_SECRET/$API_KEY/g' $3
+    sed -i -e "s/API_KEY_SECRET/$API_KEY/g" $3
     echo "Deploying [$3][$1] workflows to [$2]"
     gcloud workflows deploy $1 --location=asia-southeast1 --source=$3
 }
