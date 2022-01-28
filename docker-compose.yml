@@ -1,0 +1,16 @@
+version: "3.2"
+services:
+  workflows_deployer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app
+    environment:
+      - GCP_REGION
+      - GCP_PROJECT
+      - BUILDKITE_BUILD_NUMBER
+      - BUILDKITE_PIPELINE_SLUG
+    volumes:
+      - ${PWD}:/app
+      - ${HOME}/.google-credentials:/.google-credentials
+      #- ${HOME}/scentregroup/workflows-deployer-dkimg/workflows-test.json:/.google-credentials
