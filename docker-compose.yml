@@ -8,6 +8,7 @@ services:
     environment:
       - GCP_REGION
       - GCP_PROJECT
+      - API_KEY
     volumes:
       - ${PWD}:/app
       - ${HOME}/.google-credentials:/.google-credentials

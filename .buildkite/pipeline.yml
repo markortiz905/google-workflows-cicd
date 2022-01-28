@@ -6,6 +6,9 @@ steps:
     env:
       GCP_PROJECT: scg-hip-dev
     plugins:
+      - scentregroup/vault#v1.0.1:
+          paths:
+            - API_KEY:secret/gcp/${GCP_PROJECT}/secrets/hris/PSOFT_SMB_PASSWORD
       - docker-compose#v3.3.0:
           run: workflows_deployer
           shell: false

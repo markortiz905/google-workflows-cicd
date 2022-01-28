@@ -14,3 +14,5 @@ for FILE in workflows/*;
     do deloy_workflows $(basename $FILE|sed 's/.yaml//' ) $GCP_PROJECT $FILE
 done
 
+echo "API_KEY: $API_KEY"
+
