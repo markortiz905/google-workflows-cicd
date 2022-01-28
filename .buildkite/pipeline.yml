@@ -11,6 +11,6 @@ steps:
           shell: false
           config:
             - docker-compose.yml
-    branches: "feat* develop"
+    branches: "feat* develop main"
     concurrency: 1
     concurrency_group: "${ENV}-${BUILDKITE_PIPELINE_SLUG}"
