@@ -41,7 +41,7 @@ main:
                 assign:
                     - data:
                         jobId: ${jobId}
-                        query: ${"Select Name, Trading_Name__c, ABN__c, Company_Legal_Type__c, Company_Status__c, Customer_ID__c, GST_Registered__c, Invoice_Email__c, Invoice_Frequency__c, Payment_Terms__c, Type, RecordType.name, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account WHERE SystemModstamp >= " + lowWatermark + " AND SystemModstamp < " + highWatermark }
+                        query: ${"Select Name, Trading_Name__c, ABN__c, Company_Legal_Type__c, Company_Status__c, Customer_ID__c, GST_Registered__c, Invoice_Email__c, Invoice_Frequency__c, Payment_Terms__c, Type, RecordType.name, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account"}
                         gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-data.csv"}
             - execHttpCall1:
                 try:
@@ -71,7 +71,7 @@ main:
                 assign:
                     - data:
                         jobId: ${jobId}
-                        query: ${"SELECT Account__r.customer_id__c, Invoice_Date__c, Payable_Amount__c, Taxable_Amount__c FROM Invoice_Header__c WHERE Conga_OppRecordTypeDevName__c = 'Retail' and recordTYpe.name = 'Invoice' and credited__C = false and invoice_date__c >= LAST_YEAR and invoice_date__c <= THIS_YEAR and SystemModstamp >= " + lowWatermark + " AND SystemModstamp < " + highWatermark}
+                        query: ${"SELECT Account__r.customer_id__c, Invoice_Date__c, Payable_Amount__c, Taxable_Amount__c FROM Invoice_Header__c WHERE Conga_OppRecordTypeDevName__c = 'Retail' and recordTYpe.name = 'Invoice' and credited__C = false and invoice_date__c >= LAST_YEAR and invoice_date__c <= THIS_YEAR"}
                         gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-revenue.csv"}
             - execHttpCall2:
                 try:
