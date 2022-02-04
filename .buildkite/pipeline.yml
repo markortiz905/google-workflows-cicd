@@ -6,7 +6,7 @@ steps:
     env:
       GCP_PROJECT: scg-hip-dev
       VAULT_ENVS: "API_KEY:secret/gcp/scg-hip-dev/secrets/hris/PSOFT_API_PASSWORD"
-      ENV_VAL: dev
+      ENV_VAL: uat # api deployed to uat gke, we access it using kong
     plugins:
       - docker-compose#v3.3.0:
           run: workflows_deployer

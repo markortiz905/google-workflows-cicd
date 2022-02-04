@@ -3,12 +3,11 @@ main:
   steps:
     - parentScope:
         assign:
-            - project: ${sys.get_env("GOOGLE_CLOUD_PROJECT_ID")}
-            - env: ENV_VAL
             - endpoint: https://api.ENV_VAL.scentregroup.cloud/v2/bss-sf-satori-sftp/
             - startTime: ${time.format(sys.now(), "Australia/Sydney")}
             - success: true
-            - apiKey: API_KEY_SECRET
+            - API_KEY: API_KEY
+            - BUCKET: bss-sf-hip-ENV_VAL-gcs
     - checkInput:
         switch:
           - condition: ${"job" in input}
@@ -25,6 +24,7 @@ main:
                     url: ${endpoint + "/createJob/" + startTime}
                     headers:
                         Accept: application/json
+                        api-key: ${API_KEY}
                 result: response
             - mapResponse:
                 assign:
@@ -42,7 +42,7 @@ main:
                     - data:
                         jobId: ${jobId}
                         query: ${"Select Name, Trading_Name__c, ABN__c, Company_Legal_Type__c, Company_Status__c, Customer_ID__c, GST_Registered__c, Invoice_Email__c, Invoice_Frequency__c, Payment_Terms__c, Type, RecordType.name, BillingStreet, BillingCity, BillingState, BillingPostalCode, BillingCountry FROM Account"}
-                        gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-data.csv"}
+                        gcsPath: ${"gs://" + BUCKET + "/data/" + jobId + "/" + attempt + "/client-data.csv"}
             - execHttpCall1:
                 try:
                     call: http.post
@@ -50,6 +50,7 @@ main:
                         url: ${endpoint + "executeSfToGcsJob"}
                         headers:
                             Content-Type: application/json
+                            api-key: ${API_KEY}
                         body: ${data}
                     result: response
                 except:
@@ -72,7 +73,7 @@ main:
                     - data:
                         jobId: ${jobId}
                         query: ${"SELECT Account__r.customer_id__c, Invoice_Date__c, Payable_Amount__c, Taxable_Amount__c FROM Invoice_Header__c WHERE Conga_OppRecordTypeDevName__c = 'Retail' and recordTYpe.name = 'Invoice' and credited__C = false and invoice_date__c >= LAST_YEAR and invoice_date__c <= THIS_YEAR"}
-                        gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-revenue.csv"}
+                        gcsPath: ${"gs://" + BUCKET + "/data/" + jobId + "/" + attempt + "/client-revenue.csv"}
             - execHttpCall2:
                 try:
                     call: http.post
@@ -80,6 +81,7 @@ main:
                         url: ${endpoint + "executeSfToGcsJob"}
                         headers:
                             Content-Type: application/json
+                            api-key: ${API_KEY}
                         body: ${data}
                     result: response
                 except:
@@ -101,7 +103,7 @@ main:
                 assign:
                     - data:
                         jobId: ${jobId}
-                        gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-data.csv"}
+                        gcsPath: ${"gs://" + BUCKET + "/data/" + jobId + "/" + attempt + "/client-data.csv"}
                         satoriFileName: ${jobId + "_client-data.csv"}
             - execHttpCall3:
                 try:
@@ -110,6 +112,7 @@ main:
                         url: ${endpoint + "executeGcsToSatori"}
                         headers:
                             Content-Type: application/json
+                            api-key: ${API_KEY}
                         body: ${data}
                     result: response
                 except:
@@ -126,7 +129,7 @@ main:
                 assign:
                     - data:
                         jobId: ${jobId}
-                        gcsPath: ${"gs://bss-sf-hip-ENV_VAL-gcs/ENV_VAL/" + jobId + "/" + attempt + "/client-revenue.csv"}
+                        gcsPath: ${"gs://" + BUCKET + "/data/" + jobId + "/" + attempt + "/client-revenue.csv"}
                         satoriFileName: ${jobId + "_client-revenue.csv"}
             - execHttpCall4:
                 try:
@@ -135,6 +138,7 @@ main:
                         url: ${endpoint + "executeGcsToSatori"}
                         headers:
                             Content-Type: application/json
+                            api-key: ${API_KEY}
                         body: ${data}
                     result: response
                 except:
@@ -157,6 +161,7 @@ main:
                         url: ${endpoint + "jobDetails"}
                         headers:
                             Content-Type: application/json
+                            api-key: ${API_KEY}
                         body: ${job}
                     result: response
         except:
