@@ -33,8 +33,6 @@ main:
         assign:
           - jobId: ${job.jobId}
           - attempt: ${string(job.attemptNumber)}
-          - lowWatermark: ${job.lowWaterMark}
-          - highWatermark: ${job.highWaterMark}
     - processClientData:
         steps:
             - prepareExec1:
